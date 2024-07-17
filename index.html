@@ -19,7 +19,7 @@
 </head>
 
 <body>
-    <canvas height="700" width="700" id="canvas">
+    <canvas height="700" width="900" id="canvas">
     </canvas>
 </body>
 <script>
@@ -36,9 +36,14 @@
     let difficulty = "nic";
     let skin = false;
     let score = 0;
+    let highscore = 0;
     let frame = 0;
     let clicked = false;
     let vyberModText = "Choose mode :3"
+    let zeleny_had = new Image();
+    zeleny_had.src = "./zeleny_had.png"
+    let duhovy_had = new Image();
+    duhovy_had.src = "./duhovy_had.png"
     let jablko = {
         x: 0,
         y: 0,
@@ -47,6 +52,7 @@
         x: 0,
         y: 0,
     }
+
 
     class Button {
         constructor(x, y, width, height, text, size = 24, styl = "normal ") {
@@ -106,6 +112,8 @@
                             break;
                         case "Play again":
                             score = 0;
+                            difficulty = "nic"
+                            skin = false;
                             tretiPause = true;
                             druhyPause = false;
                             druhyMain();
@@ -228,6 +236,15 @@
                 ctx.fillRect(i, j, 45, 45);
             }
         }
+        ctx.fillStyle = "white";
+        ctx.fillRect(700, 0, w, h);
+        ctx.drawImage(skin ? duhovy_had : zeleny_had, 705, 500, 190, 200);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Difficulty: " + difficulty, 720, 50);
+        ctx.fillText("Score: " + score, 720, 100);
+        ctx.textAlign = "center";
         snake.draw();
         ctx.fillStyle = "red";
         ctx.fillRect(jablko.x * 700 / 15, jablko.y * 700 / 15, 700 / 15, 700 / 15);
@@ -273,7 +290,9 @@
             return
         }
         ctx.fillStyle = "#2B273F";
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, w, h + 1);
+        ctx.fillStyle = "white";
+        ctx.fillRect(700, 0, w, h);
         ctx.fillStyle = "white";
         ctx.font = "100px Arial";
         ctx.fillText("Game over", 350, 200);
@@ -285,11 +304,18 @@
         ctx.restore();
         ctx.fillStyle = "white";
         ctx.font = "24px Arial";
-        ctx.fillText("Highest score: ", 350, 300);
+        compare();
+        ctx.fillText("Highest score: " + highscore, 350, 300);
         ctx.fillText("Score: " + score, 350, 350);
         buttonPlayAgain.draw();
         buttonPlayAgain.isClicked();
         setTimeout(tretiMain, 1000 / 60)
+    }
+
+    function compare() {
+        if (score > highscore) {
+            highscore = score;
+        }
     }
 
     function apple() {

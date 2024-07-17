@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            /* Ensure full viewport height */
+            margin: 0;
+            /* Remove default margin */
+        }
+    </style>
+</head>
+
+<body>
+    <canvas height="700" width="900" id="canvas">
+    </canvas>
+</body>
+<script>
+    let canvas = document.getElementById("canvas");
+    let ctx = canvas.getContext("2d");
+    ctx.textAlign = "center";
+    let h = 700;
+    let w = 700;
+    let x = 0;
+    let y = 0;
+    let pause = false;
+    let druhyPause = false;
+    let tretiPause = true;
+    let difficulty = "nic";
+    let skin = false;
+    let score = 0;
+    let highscore = 0;
+    let frame = 0;
+    let clicked = false;
+    let vyberModText = "Choose mode :3"
+    let zeleny_had = new Image();
+    zeleny_had.src = "./zeleny_had.png"
+    let duhovy_had = new Image();
+    duhovy_had.src = "./duhovy_had.png"
+    let jablko = {
+        x: 0,
+        y: 0,
+    }
+    let mouse = {
+        x: 0,
+        y: 0,
+    }
+
+
+    class Button {
+        constructor(x, y, width, height, text, size = 24, styl = "normal ") {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.text = text;
+            this.size = size;
+            this.styl = styl;
+        }
+        draw() {
+            switch (this.text) {
+                case "Easy": ctx.fillStyle = difficulty == "easy" ? "rgb(0, " + ((Math.sin(frame / 3) + 1) * 64 + 128) + ", 0)" : "white";
+                    break;
+                case "Hard":
+                    ctx.fillStyle = difficulty == "hard" ? "rgb(" + ((Math.sin(frame / 3) + 1) * 64 + 128) + ", 0, 0)" : "white";
+                    break;
+                case "Use skin": ctx.fillStyle = skin ? ('hsl(' + frame * 7 + ',100%,50%)') : "white";
+                    break;
+            }
+            ctx.save();
+            ctx.filter = "blur(3px)"
+            ctx.fillRect(this.x - 5, this.y - 5, this.width + 10, this.height + 10);
+            ctx.restore();
+            ctx.fillStyle = "#2C1F43";
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = "white";
+            ctx.font = this.styl + this.size + "px Arial";
+            ctx.fillText(this.text, this.x + this.width / 2, this.y + (this.height + 20) / 2);
+        }
+        isClicked() {
+            if (clicked) {
+                if (this.x < mouse.x && this.y < mouse.y && this.x + this.width > mouse.x && this.y + this.height > mouse.y) {
+                    clicked = false;
+                    switch (this.text) {
+                        case "Easy":
+                            difficulty = "easy";
+                            vyberModText = "Choose mode :3";
+                            break;
+                        case "Hard":
+                            difficulty = "hard";
+                            vyberModText = "Choose mode :3";
+                            break;
+                        case "Use skin":
+                            skin = !skin;
+                            break;
+                        case "Play":
+                            if (difficulty == "nic") {
+                                vyberModText = "Choose mode >:("
+                                return
+                            }
+                            pause = false;
+                            inicializace();
+                            main();
+                            druhyPause = true;
+                            break;
+                        case "Play again":
+                            score = 0;
+                            difficulty = "nic"
+                            skin = false;
+                            tretiPause = true;
+                            druhyPause = false;
+                            druhyMain();
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    class Snake {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.direction = "down";
+            this.nextDirection = "down";
+            this.ocas = [];
+            this.jablkoEaten = false;
+        }
+        draw() {
+            for (let i = 0; i < this.ocas.length; i++) {
+                ctx.fillStyle = this.ocas[i].color;
+                ctx.fillRect(this.ocas[i].x * 700 / 15, this.ocas[i].y * 700 / 15, 700 / 15, 700 / 15);
+            }
+            ctx.fillStyle = skin ? 'hsl(' + ((frame * 5) + 40) + ',100%,50%)' : "#114712"
+            ctx.fillRect(this.x * 700 / 15, this.y * 700 / 15, 700 / 15, 700 / 15);
+        }
+        move() {
+            this.direction = this.nextDirection
+            switch (this.direction) {
+                case "down":
+                    this.y++;
+                    break;
+                case "up":
+                    this.y--;
+                    break;
+                case "right":
+                    this.x++;
+                    break;
+                case "left":
+                    this.x--;
+                    break;
+                default:
+                    console.log("Je to špatně.");
+            }
+        }
+        eat() {
+            if (this.x == jablko.x && this.y == jablko.y) {
+                apple();
+                this.jablkoEaten = true;
+                score++;
+            }
+        }
+        border() {
+            if (this.x == -1 || this.y == -1 || this.x == 15 || this.y == 15) {
+                pause = true
+                tretiPause = false;
+                tretiMain();
+            }
+        }
+        noBorder() {
+            if (this.x == -1) {
+                this.x = 14;
+            } else if (this.y == -1) {
+                this.y = 14;
+            } else if (this.x == 15) {
+                this.x = 0;
+            } else if (this.y == 15) {
+                this.y = 0;
+            }
+        }
+        updateOcas() {
+            if (!this.jablkoEaten) {
+                this.ocas.shift()
+            }
+            this.ocas.push({
+                x: this.x,
+                y: this.y,
+                color: skin ? 'hsl(' + frame * 5 + ',100%,50%)' : "green"
+            })
+            this.jablkoEaten = false;
+        }
+        kolize() {
+            for (let i = 0; i < this.ocas.length; i++) {
+                if (this.ocas[i].x == this.x && this.ocas[i].y == this.y) {
+                    pause = true
+                    tretiPause = false;
+                    tretiMain();
+                }
+            }
+        }
+    }
+
+    let buttonEasy = new Button(200, 250, 100, 50, "Easy");
+    let buttonHard = new Button(400, 250, 100, 50, "Hard");
+    let buttonSkin = new Button(275, 350, 150, 50, "Use skin");
+    let buttonPlay = new Button(250, 450, 200, 70, "Play", 35, "bold ");
+    let buttonPlayAgain = new Button(225, 430, 250, 70, "Play again", 35, "bold ");
+    let snake = new Snake(x, y);
+    apple();
+
+    function main() {
+        snake.updateOcas();
+        snake.move();
+        snake.kolize();
+        if (difficulty == "hard") {
+            snake.border();
+        } else {
+            snake.noBorder();
+        }
+        snake.eat();
+        if (pause) {
+            return
+        }
+        ctx.fillStyle = "#919191";
+        ctx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 700; i += (700 + 2) / 15) {
+            for (let j = 0; j < 700; j += (700 + 2) / 15) {
+                ctx.fillStyle = "#141414";
+                ctx.fillRect(i, j, 45, 45);
+            }
+        }
+        ctx.fillStyle = "white";
+        ctx.fillRect(700, 0, w, h);
+        ctx.drawImage(skin ? duhovy_had : zeleny_had, 705, 500, 190, 200);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Difficulty: " + difficulty, 720, 50);
+        ctx.fillText("Score: " + score, 720, 100);
+        ctx.textAlign = "center";
+        snake.draw();
+        ctx.fillStyle = "red";
+        ctx.fillRect(jablko.x * 700 / 15, jablko.y * 700 / 15, 700 / 15, 700 / 15);
+        setTimeout(main, 400)
+        frame++;
+    }
+
+    function druhyMain() {
+        buttonEasy.isClicked();
+        buttonHard.isClicked();
+        buttonSkin.isClicked();
+        buttonPlay.isClicked();
+        if (druhyPause) {
+            return;
+        }
+        ctx.fillStyle = "#2B273F";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "white";
+        ctx.font = "100px Arial";
+        ctx.fillText("Snake", 350, 150);
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.filter = "blur(5px)"
+        ctx.strokeStyle = 'hsl(' + frame * 1 + ',100%,50%)'
+        ctx.strokeText("Snake", 350, 150);
+        ctx.restore();
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        ctx.fillText(vyberModText, 350, 210);
+        buttonEasy.draw();
+        buttonHard.draw();
+        buttonSkin.draw();
+        buttonPlay.draw();
+        setTimeout(druhyMain, 1000 / 60)
+        frame++;
+        clicked = false;
+    }
+
+    druhyMain();
+
+    function tretiMain() {
+        if (tretiPause) {
+            return
+        }
+        ctx.fillStyle = "#2B273F";
+        ctx.fillRect(0, 0, w, h + 1);
+        ctx.fillStyle = "white";
+        ctx.fillRect(700, 0, w, h);
+        ctx.fillStyle = "white";
+        ctx.font = "100px Arial";
+        ctx.fillText("Game over", 350, 200);
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.filter = "blur(5px)"
+        ctx.strokeStyle = 'hsl(0,100%,50%)'
+        ctx.strokeText("Game over", 350, 200);
+        ctx.restore();
+        ctx.fillStyle = "white";
+        ctx.font = "24px Arial";
+        compare();
+        ctx.fillText("Highest score: " + highscore, 350, 300);
+        ctx.fillText("Score: " + score, 350, 350);
+        buttonPlayAgain.draw();
+        buttonPlayAgain.isClicked();
+        setTimeout(tretiMain, 1000 / 60)
+    }
+
+    function compare() {
+        if (score > highscore) {
+            highscore = score;
+        }
+    }
+
+    function apple() {
+        jablko.x = Math.floor(Math.random() * 15)
+        jablko.y = Math.floor(Math.random() * 15)
+        if (jablko.x == snake.x && jablko.y == snake.y) {
+            apple();
+        }
+        for (let i = 0; i < snake.ocas.length; i++) {
+            if (jablko.x == snake.ocas[i].x && jablko.y == snake.ocas[i].y) {
+                apple();
+            }
+        }
+    }
+
+    function inicializace() {
+        apple();
+        mouse = {
+            x: 0,
+            y: 0,
+        }
+        snake = new Snake(x, y);
+    }
+
+    document.addEventListener("keydown", (e) => {
+        switch (e.code) {
+            case "KeyS":
+                if (snake.direction != "up") {
+                    snake.nextDirection = "down"
+                }
+                break;
+            case "KeyW":
+                if (snake.direction != "down") {
+                    snake.nextDirection = "up"
+                }
+                break;
+            case "KeyA":
+                if (snake.direction != "right") {
+                    snake.nextDirection = "left"
+                }
+                break;
+            case "KeyD":
+                if (snake.direction != "left") {
+                    snake.nextDirection = "right"
+                }
+                break;
+            case "ArrowDown":
+                if (snake.direction != "up") {
+                    snake.nextDirection = "down"
+                }
+                break;
+            case "ArrowUp":
+                if (snake.direction != "down") {
+                    snake.nextDirection = "up"
+                }
+                break;
+            case "ArrowLeft":
+                if (snake.direction != "right") {
+                    snake.nextDirection = "left"
+                }
+                break;
+            case "ArrowRight":
+                if (snake.direction != "left") {
+                    snake.nextDirection = "right"
+                }
+                break;
+        }
+    })
+
+    document.addEventListener("mousedown", (e) => {
+        if (e.button == 0) {
+            clicked = true;
+        }
+    })
+
+    document.addEventListener("mouseup", (e) => {
+        if (e.button == 0) {
+            clicked = false;
+        }
+    })
+
+    canvas.addEventListener("mousemove", (e) => {
+        mouse.x = e.offsetX;
+        mouse.y = e.offsetY;
+    })
+</script>
+
+</html>

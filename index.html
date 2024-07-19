@@ -14,6 +14,7 @@
             /* Ensure full viewport height */
             margin: 0;
             /* Remove default margin */
+            background-color: #2b273f;
         }
     </style>
 </head>
@@ -236,11 +237,10 @@
                 ctx.fillRect(i, j, 45, 45);
             }
         }
-        ctx.fillStyle = "white";
-        ctx.fillRect(700, 0, w, h);
+        ctx.clearRect(700, 0, w, h);
         ctx.drawImage(skin ? duhovy_had : zeleny_had, 705, 500, 190, 200);
         ctx.textAlign = "left";
-        ctx.fillStyle = "black";
+        ctx.fillStyle = "white";
         ctx.font = "24px Arial";
         ctx.fillText("Difficulty: " + difficulty, 720, 50);
         ctx.fillText("Score: " + score, 720, 100);

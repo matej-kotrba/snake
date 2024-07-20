@@ -237,6 +237,7 @@
                 ctx.fillRect(i, j, 45, 45);
             }
         }
+
         ctx.clearRect(700, 0, w, h);
         ctx.drawImage(skin ? duhovy_had : zeleny_had, 705, 500, 190, 200);
         ctx.textAlign = "left";
@@ -261,7 +262,7 @@
             return;
         }
         ctx.fillStyle = "#2B273F";
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, w + 1000, h + 1000);
         ctx.fillStyle = "white";
         ctx.font = "100px Arial";
         ctx.fillText("Snake", 350, 150);
@@ -291,8 +292,6 @@
         }
         ctx.fillStyle = "#2B273F";
         ctx.fillRect(0, 0, w, h + 1);
-        ctx.fillStyle = "white";
-        ctx.fillRect(700, 0, w, h);
         ctx.fillStyle = "white";
         ctx.font = "100px Arial";
         ctx.fillText("Game over", 350, 200);
